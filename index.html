@@ -2,71 +2,49 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instant Alarm Memo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>秒速アラーム</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #f0f2f5; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        input, textarea, button { width: 100%; margin-bottom: 15px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { background: #ff4757; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .alarm-list { margin-top: 20px; width: 100%; max-width: 400px; }
-        .alarm-item { background: #fff; padding: 10px; margin-bottom: 10px; border-left: 5px solid #ff4757; border-radius: 4px; display: flex; justify-content: space-between; }
+        body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f2f5; }
+        .card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 350px; text-align: center; }
+        h2 { margin-top: 0; color: #1c1e21; font-size: 1.5rem; }
+        input[type="time"] { width: 100%; padding: 15px; margin: 20px 0; border: 2px solid #e4e6eb; border-radius: 12px; font-size: 32px; text-align: center; font-family: inherit; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 12px; background: #007aff; color: white; font-size: 18px; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        button:active { background: #0056b3; transform: scale(0.98); }
+        .footer { margin-top: 20px; font-size: 12px; color: #8e9297; line-height: 1.4; }
     </style>
 </head>
 <body>
+
     <div class="card">
         <h2>⏰ アラーム予約</h2>
-        <input type="time" id="alarmTime">
-        <textarea id="alarmMemo" placeholder="その時、何をする？（メモ）"></textarea>
-        <button onclick="setAlarm()">アラームをセットする</button>
+        <input type="time" id="alarmTime" value="07:00">
+        <button onclick="launchAlarm()">アラームを作成</button>
+        
+        <div class="footer">
+            ボタンを押した後、iPhoneの画面で<br>「保存」を押せば完了です。
+        </div>
     </div>
-    <div id="list" class="alarm-list"></div>
 
     <script>
-        // 通知の許可を得る
-        if (Notification.permission !== 'granted') Notification.requestPermission();
+        function launchAlarm() {
+            const timeInput = document.getElementById('alarmTime').value;
+            if (!timeInput) {
+                alert("時間を入力してください");
+                return;
+            }
 
-        let alarms = [];
-
-        function setAlarm() {
-            const time = document.getElementById('alarmTime').value;
-            const memo = document.getElementById('alarmMemo').value;
-            if (!time) return alert("時間を設定してください");
-
-            const alarm = { time, memo, id: Date.now() };
-            alarms.push(alarm);
-            updateList();
+            // ショートカット名「MakeAlarm」に時間を渡すURL
+            const shortcutName = "MakeAlarm";
+            const url = "shortcuts://run-shortcut?name=" + encodeURIComponent(shortcutName) + "&input=" + encodeURIComponent(timeInput);
             
-            // 入力欄をクリア
-            document.getElementById('alarmMemo').value = "";
+            // ホーム画面追加時でも動作しやすいように、少し遅延させて遷移させる手法
+            setTimeout(() => {
+                window.location.href = url;
+            }, 100);
         }
-
-        function updateList() {
-            const listDiv = document.getElementById('list');
-            listDiv.innerHTML = alarms.map(a => `
-                <div class="alarm-item">
-                    <span><b>${a.time}</b>: ${a.memo}</span>
-                    <button onclick="removeAlarm(${a.id})" style="width:auto; padding:5px; margin:0; background:#ccc;">削除</button>
-                </div>
-            `).join('');
-        }
-
-        function removeAlarm(id) {
-            alarms = alarms.filter(a => a.id !== id);
-            updateList();
-        }
-
-        // 1秒ごとにチェック
-        setInterval(() => {
-            const now = new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'});
-            alarms.forEach((a, index) => {
-                if (a.time === now) {
-                    new Notification("時間です！", { body: a.memo });
-                    alert("【" + a.time + "】\n" + a.memo);
-                    removeAlarm(a.id);
-                }
-            });
-        }, 1000);
     </script>
 </body>
 </html>
